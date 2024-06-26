@@ -1,119 +1,116 @@
 import axios from 'axios';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-// Function to insert or update board data
-export async function BoardUpdate(boardData) {
+const CLOUDINARY_URL = process.env.REACT_APP_CLOUDINARY_URL;
+const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_PRESET;
+
+async function fetchBoard(bid) {
   try {
-    const response = await axios.post('/bizz/board/update', boardData, {
+    const response = await axios.get(`/bizz/board/getUpdate/${bid}`);
+    console.log('Board fetched:', response.data);
+    return response.data;
+  } catch (error) {
+    console.log('Error fetching board data:', error.message);
+    throw error; // Rethrow the error so it can be caught by the caller
+  }
+}
+
+async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  console.log("file" + formData);
+
+  try {
+    const response = await axios.post(CLOUDINARY_URL, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    
+    return response.data.secure_url;
+  } catch (error) {
+    console.error('Error uploading file', error);
+    throw error;
+  }
+}
+
+async function BoardUpdate(boardData, file) {
+  const formData = new FormData();
+  formData.append('board', new Blob([JSON.stringify(boardData)], { type: "application/json" }));
+
+  if (file) {
+    formData.append('file', file);
+  }
+
+  try {
+    const response = await axios.post('/bizz/board/update', formData, {
       headers: {
-        'Content-Type': 'application/json', // Ensure the Content-Type is JSON
+        'Content-Type': 'multipart/form-data',
       },
     });
+    console.log('Board updated:', response.data);
     return response.data;
   } catch (error) {
-    console.log('Error sending data:', error);
+    console.log('Error updating board data:', error.message);
     throw error;
   }
 }
-
-// Function to upload image to Cloudinary
-export async function uploadImage(file) {
-  const data = new FormData();
-  data.append('file', file);
-  data.append('upload_preset', process.env.REACT_APP_CLOUDINARY_PRESET);
-  
-  try {
-    const response = await fetch(process.env.REACT_APP_CLOUDINARY_URL, {
-      method: 'POST',
-      body: data,
-    });
-    const result = await response.json();
-    return result.url;
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    throw error;
-  }
-}
-
-// Function to fetch board data by bid
-const fetchBoardDataById = async (bid) => {
-  try {
-    const response = await axios.get(`/bizz/board/${bid}`);
-    return response.data;
-  } catch (error) {
-    console.log('Error fetching data:', error);
-    throw error;
-  }
-};
 
 const Update = () => {
+  const { bid } = useParams();
   const navigate = useNavigate();
-  const { bid } = useParams(); // Get the bid from the URL
-  const [board, setBoard] = useState(null); // State to hold board data
-  const [title, setTitle] = useState(''); // State for title input
-  const [writer, setWriter] = useState(''); // State for writer input
-  const [content, setContent] = useState(''); // State for content textarea
-  const [file, setFile] = useState(null); // State for file input
-  const fileInput = useRef(null); // Ref for file input
+  const [title, setTitle] = useState('');
+  const [writer, setWriter] = useState('');
+  const [content, setContent] = useState('');
+  const [files, setFiles] = useState([]); // State to hold files associated with the board
+  const [file, setFile] = useState(null);
+  const fileInput = useRef(null);
 
   useEffect(() => {
-    const getBoardData = async () => {
-      try {
-        const boardData = await fetchBoardDataById(bid);
-        setBoard(boardData);
-        setTitle(boardData.title || '');
-        setWriter(boardData.writer || '');
-        setContent(boardData.content || ''); // Ensure content is properly set here
-      } catch (error) {
-        console.log('Error fetching board data:', error);
-        alert('Error fetching board data');
-      }
-    };
-    getBoardData();
+    if (bid) {
+      fetchBoard(bid).then((board) => {
+        setTitle(board.title);
+        setWriter(board.writer);
+        setContent(board.content);
+        setFiles(board.files); // Update state with board files
+      }).catch((error) => {
+        console.log('Error fetching board data:', error.message);
+        // Handle error if necessary
+      });
+    }
   }, [bid]);
-  
-  // Function to handle form submission
+
+  const move = () => {
+    navigate('/list');
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     try {
-      let imageUrl = board.imageUrl; // Initialize with existing imageUrl or empty string
-      // If a new file is selected, upload it to Cloudinary
-      if (file) {
-        imageUrl = await uploadImage(file);
-      }
-
-      // Prepare updated boardData to send to backend
-      const updatedBoardData = {
-        bid: board.bid, // Assuming bid is needed for update
-        title,
-        writer,
-        content,
-        imageUrl,
+      let uploadedFile = file;
+  
+      const boardData = {
+        bid: bid,
+        title: title,
+        writer: writer,
+        content: content,
+        regTime: new Date().toISOString(), // Assuming regTime is a new Date
+        viewCount: 0, // Set the viewCount to 0 or as required
       };
-
-      // Call BoardInsert function to send data to backend
-      await BoardUpdate(updatedBoardData);
-
-      // Optionally reset the form fields and file input
-      setTitle('');
-      setWriter('');
-      setContent('');
-      setFile(null);
-      if (fileInput.current) {
-        fileInput.current.value = '';
-      }
-
-      // Navigate back to the list page after successful update
-      navigate('/list');
+  
+      await BoardUpdate(boardData, uploadedFile);
+  
+      console.log('Board updated');
+      alert('글 수정 완료');
+      move();
     } catch (error) {
-      console.log('Error updating board:', error);
-      alert('Error updating board');
+      console.log('Error handling submit:', error.message);
+      alert('Error handling submit');
     }
   };
 
-  // Function to handle file input change
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     setFile(selectedFile);
@@ -128,7 +125,7 @@ const Update = () => {
           </div>
           <form onSubmit={handleSubmit}>
             <table className="basic_write">
-              <caption>News 입력</caption>
+              <caption>News 수정</caption>
               <colgroup>
                 <col style={{ width: '150px' }} />
                 <col style={{ width: '*' }} />
@@ -153,9 +150,9 @@ const Update = () => {
                   <td>
                     <input
                       type="text"
-                      title="작성자"
+                      title="성명"
                       className="name_txt"
-                      placeholder="작성자 *"
+                      placeholder="성명 *"
                       value={writer}
                       onChange={(e) => setWriter(e.target.value)}
                       required
@@ -171,6 +168,15 @@ const Update = () => {
                       className="name_txt"
                       ref={fileInput}
                       onChange={handleFileChange}
+                    />
+                  </td>
+                  <h3>불러온 첨부파일:</h3>
+                  <td>
+                    <textarea
+                      type="file"
+                      title="불러온 첨부파일"
+                      className="name_txt"
+                      value={files}
                     />
                   </td>
                 </tr>
@@ -191,7 +197,7 @@ const Update = () => {
             </table>
             <div className="btn_area">
               <button type="submit" className="btn_blue">확인</button>
-              <a href="#" className="btn_blue_line" onClick={() => navigate('/list')}>취소</a>
+              <a href="#" className="btn_blue_line">취소</a>
             </div>
           </form>
         </div>

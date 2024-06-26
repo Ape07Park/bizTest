@@ -103,7 +103,7 @@ function List() {
                     </p>
                   </td>
                   <td className="board_man">{board.writer}</td>
-                  <td className="board_date">{board.regTime}</td>
+                  <td className="board_date">{board.regTime.substring(0, 10)}</td>
                   <td className="board_read">{board.viewCount}</td>
                   <td className="board_file">
                     {board.files && <span className="file_icon">파일다운로드</span>}

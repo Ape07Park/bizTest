@@ -10,6 +10,8 @@ import org.apache.ibatis.annotations.Update;
 
 import com.example.bizzTest.entity.Board;
 
+import ch.qos.logback.core.net.SyslogOutputStream;
+
 @Mapper
 public interface BoardDao {
     // 1개 가져오기
@@ -21,10 +23,13 @@ public interface BoardDao {
     List<Board> getBoardList();
 
     // 새 게시글 삽입
-    @Insert("insert into Board values (default, #{title}, #{writer}, #{content}, default, default, #{files})")
+    @Insert("insert into board values (default, #{title}, #{writer}, #{content}, default, default, #{files})")
     void insertBoard(Board board);
 
-    // 게시글 업데이트
-    @Update("update Board set title=#{title}, content=#{content}, files=#{files}, regtime=current_timestamp where bid=#{bid}")
+    @Update("update board set title=#{title}, content=#{content}, viewcount=#{viewCount}, files=#{files} where bid=#{bid}")
     void updateBoard(Board board);
+    
+    @Update("update board set viewcount = viewcount + 1 where bid = #{bid}")
+    void increaseViewCount(int bid);
+  
 }

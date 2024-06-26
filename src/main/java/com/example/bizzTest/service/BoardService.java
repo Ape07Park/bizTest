@@ -13,4 +13,6 @@ public interface BoardService {
 	void insertBoard(Board board);  // 게시물 작성할 때 사용
 	
 	void updateBoard(Board board); // 게시물 수정할 때 사용
+		
+    public void increaseViewCount(int bid);
 }

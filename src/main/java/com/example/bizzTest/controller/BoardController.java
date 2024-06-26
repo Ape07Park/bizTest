@@ -1,17 +1,20 @@
 package com.example.bizzTest.controller;
 
-import java.util.List;
+import java.util.List; 
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import com.example.bizzTest.entity.Board;
 import com.example.bizzTest.service.BoardService;
@@ -64,7 +67,8 @@ public class BoardController {
 	@GetMapping("/detail/{bid}")
 	public JSONObject getBoardDetail(@PathVariable int bid) {
 				Board board = boardService.getBoardByBid(bid);
-				System.out.println("board"+ board);
+				boardService.increaseViewCount(bid);
+				
 				JSONObject jObj = new JSONObject();
 				jObj.put("bid", board.getBid());
 				jObj.put("title", board.getTitle());
@@ -76,15 +80,42 @@ public class BoardController {
 				
 				return jObj;
 	}
+		
+	@GetMapping("/getUpdate/{bid}")
+	public JSONObject getBoardUpdate(@PathVariable int bid) {		
+		
+		Board board = boardService.getBoardByBid(bid);
+		
+		JSONObject jObj = new JSONObject();
+		jObj.put("bid", board.getBid());
+		jObj.put("title", board.getTitle());
+		jObj.put("writer", board.getWriter());
+		jObj.put("content", board.getContent());
+		jObj.put("regTime", board.getRegTime());
+		jObj.put("viewCount", board.getViewCount());
+		jObj.put("files", board.getFiles());					
+		
+		return jObj;
+	}
 	
 	@PostMapping("/update")
-	public String boardUpdate(@RequestBody Board board) {
-		
-		Board boardData = Board.builder().title(board.getTitle()).content(board.getContent())
-				.regTime(board.getRegTime()).viewCount(board.getViewCount()).files(board.getFiles()).build();
-		
-		boardService.updateBoard(boardData);
-		return "Success";
-	}
+    public String boardUpdate(@RequestPart("board") Board board, @RequestPart("file") MultipartFile file) {
+        
+        Board boardData = Board.builder()
+        		.bid(board.getBid())
+                .title(board.getTitle())
+                .writer(board.getWriter())
+                .content(board.getContent())
+                .regTime(board.getRegTime())
+                .viewCount(board.getViewCount())
+                .files(file.getOriginalFilename()) // 파일명을 Board에 저장
+                .build();
+        
+        System.out.println(boardData);
+
+        boardService.updateBoard(boardData);
+              
+        return "Success";
+    }
 }
 
