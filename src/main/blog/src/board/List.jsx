@@ -96,7 +96,7 @@ function List() {
             <tbody>
               {getCurrentPageData().map((board, index) => (
                 <tr key={board.bid}>
-                  <td>{index + 1}</td>
+                  <td>{board.bid}</td>
                   <td className="board_txt">
                     <p onClick={() => moveView(board.bid)} style={{ cursor: 'pointer' }}>
                       {board.title}

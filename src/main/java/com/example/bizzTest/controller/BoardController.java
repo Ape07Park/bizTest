@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.bizzTest.entity.Board;
 import com.example.bizzTest.service.BoardService;
@@ -22,16 +24,23 @@ import lombok.RequiredArgsConstructor;
 public class BoardController {
 	private final BoardService boardService;
 
-	@PostMapping("/insert")
-	public String boardInsert(@RequestBody Board board) {
-		System.out.println(board);
-		
-		Board boardData = Board.builder().title(board.getTitle()).writer(board.getWriter()).content(board.getContent())
-				.regTime(board.getRegTime()).viewCount(board.getViewCount()).files(board.getFiles()).build();
-		
-		boardService.insertBoard(boardData);
-		return "Success";
-	}
+	 @PostMapping("/insert")
+	    public String boardInsert(@RequestPart("board") Board board, @RequestPart("file") MultipartFile file) {
+	        
+	        Board boardData = Board.builder()
+	                .title(board.getTitle())
+	                .writer(board.getWriter())
+	                .content(board.getContent())
+	                .regTime(board.getRegTime())
+	                .viewCount(board.getViewCount())
+	                .files(file.getOriginalFilename()) // 파일명을 Board에 저장
+	                .build();
+	        
+	        System.out.println(boardData);
+
+	        boardService.insertBoard(boardData);
+	        return "Success";
+	    }
 
 	@GetMapping("/list")
 	public JSONArray list() {

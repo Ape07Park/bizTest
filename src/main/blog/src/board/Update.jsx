@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 // Function to insert or update board data
 export async function BoardUpdate(boardData) {
@@ -36,8 +36,20 @@ export async function uploadImage(file) {
   }
 }
 
+// Function to fetch board data by bid
+const fetchBoardDataById = async (bid) => {
+  try {
+    const response = await axios.get(`/bizz/board/${bid}`);
+    return response.data;
+  } catch (error) {
+    console.log('Error fetching data:', error);
+    throw error;
+  }
+};
+
 const Update = () => {
   const navigate = useNavigate();
+  const { bid } = useParams(); // Get the bid from the URL
   const [board, setBoard] = useState(null); // State to hold board data
   const [title, setTitle] = useState(''); // State for title input
   const [writer, setWriter] = useState(''); // State for writer input
@@ -46,26 +58,20 @@ const Update = () => {
   const fileInput = useRef(null); // Ref for file input
 
   useEffect(() => {
-    // Get board data from location state passed from View component or local storage
-    const locationState = window.history.state;
-    if (locationState && locationState.boardDatas) {
-      const boardData = locationState.boardDatas[0]; // Assuming boardDatas is an array with a single object
-      setBoard(boardData);
-      setTitle(boardData.title);
-      setWriter(boardData.writer);
-      setContent(boardData.content); // Ensure content is properly set here
-    } else {
-      // Retrieve board data from local storage if not available in location state
-      const storedBoards = JSON.parse(localStorage.getItem('boardDatas'));
-      if (storedBoards) {
-        const boardData = storedBoards[0]; // Assuming boardDatas is an array with a single object
+    const getBoardData = async () => {
+      try {
+        const boardData = await fetchBoardDataById(bid);
         setBoard(boardData);
-        setTitle(boardData.title);
-        setWriter(boardData.writer);
-        setContent(boardData.content); // Ensure content is properly set here
+        setTitle(boardData.title || '');
+        setWriter(boardData.writer || '');
+        setContent(boardData.content || ''); // Ensure content is properly set here
+      } catch (error) {
+        console.log('Error fetching board data:', error);
+        alert('Error fetching board data');
       }
-    }
-  }, []);
+    };
+    getBoardData();
+  }, [bid]);
   
   // Function to handle form submission
   const handleSubmit = async (event) => {

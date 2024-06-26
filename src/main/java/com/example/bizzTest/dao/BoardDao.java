@@ -25,6 +25,6 @@ public interface BoardDao {
     void insertBoard(Board board);
 
     // 게시글 업데이트
-    @Update("update Board set title=#{title}, content=#{content}, files=#{files}, modtime=current_timestamp where bid=#{bid}")
+    @Update("update Board set title=#{title}, content=#{content}, files=#{files}, regtime=current_timestamp where bid=#{bid}")
     void updateBoard(Board board);
 }

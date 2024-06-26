@@ -2,11 +2,18 @@ import axios from 'axios';
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export async function BoardInsert(boardData) {
+const CLOUDINARY_URL = process.env.REACT_APP_CLOUDINARY_URL;
+const CLOUDINARY_UPLOAD_PRESET = process.env.REACT_APP_CLOUDINARY_PRESET;
+
+export async function BoardInsert(boardData, file) {
+  const formData = new FormData();
+  formData.append('board', new Blob([JSON.stringify(boardData)], { type: 'application/json' }));
+  formData.append('file', file);
+
   try {
-    const response = await axios.post('/bizz/board/insert', boardData, {
+    const response = await axios.post('/bizz/board/insert', formData, {
       headers: {
-        'Content-Type': 'application/json', // Ensure the Content-Type is JSON
+        'Content-Type': 'multipart/form-data',
       },
     });
     return response.data;
@@ -16,20 +23,18 @@ export async function BoardInsert(boardData) {
   }
 }
 
-export async function uploadImage(file) {
-  const data = new FormData();
-  data.append('file', file);
-  data.append('upload_preset', process.env.REACT_APP_CLOUDINARY_PRESET);
-  
+async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
   try {
-    const response = await fetch(process.env.REACT_APP_CLOUDINARY_URL, {
-      method: 'POST',
-      body: data,
+    const response = await axios.post(CLOUDINARY_URL, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
-    const result = await response.json();
-    return result.url;
+    return response.data.secure_url;
   } catch (error) {
-    console.error('Error uploading image:', error);
+    console.error('Error uploading file', error);
     throw error;
   }
 }
@@ -41,37 +46,33 @@ const Write = () => {
   const [content, setContent] = useState('');
   const [file, setFile] = useState(null);
   const fileInput = useRef(null);
-  
+
   const move = () => {
     navigate('/list');
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     try {
-      let imageUrl = ''; // Variable to hold the Cloudinary image URL
-      
-      // If a file is selected, upload it to Cloudinary
+      let imageUrl = '';
+
       if (file) {
+        console.log('Selected file:', file.name);
         imageUrl = await uploadImage(file);
       }
-      
-      // Prepare boardData to be sent to backend
+
       const boardData = {
         title,
         writer,
         content,
-        imageUrl, // Add Cloudinary image URL to boardData
+        imageUrl,
       };
 
-      // Call BoardInsert function to send data to backend
-      const response = await BoardInsert(boardData);
-      
-      // Handle response if needed
+      const response = await BoardInsert(boardData, file);
+
       alert('글 등록완료');
-      
-      // Optionally, reset the form fields
+
       setTitle('');
       setWriter('');
       setContent('');
@@ -80,14 +81,13 @@ const Write = () => {
         fileInput.current.value = '';
       }
 
-      // Navigate to the list page
       move();
     } catch (error) {
       console.log('Error sending data:', error);
       alert('Error sending data');
     }
   };
-  
+
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     setFile(selectedFile);
