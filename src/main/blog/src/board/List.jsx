@@ -122,15 +122,7 @@ function List() {
             ))}
             <a className={`next ${currentPage === totalPages ? 'disabled' : ''}`} onClick={() => changePage(currentPage + 1)} href="#">다음 페이지</a>
             <a className={`next end ${currentPage === totalPages ? 'disabled' : ''}`} onClick={() => changePage(totalPages)} href="#">마지막 페이지</a>
-          </div>
-          <div className="find_wrap">
-            <select name="" id="">
-              <option value="">제목</option>
-              <option value="">내용</option>
-            </select>
-            <input type="text" name="" id="" title="검색어 입력" placeholder="검색어 입력" />
-            <a href="#" className="btn_gray">검색</a>
-          </div>
+          </div>     
         </div>
       </section>
     </div>

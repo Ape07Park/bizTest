@@ -4,8 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 function View() {
   const { bid } = useParams();
-  const [boardData, setBoardData] = useState({});
-  const [viewCountUpdated, setViewCountUpdated] = useState(false);
+  const [boardData, setBoardData] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -13,30 +12,15 @@ function View() {
       try {
         const response = await axios.get(`/bizz/board/detail/${bid}`);
         setBoardData(response.data);
+        
+        // No automatic view count increase here
       } catch (error) {
         console.log('Error fetching data:', error);
       }
     };
 
     fetchBoardData();
-  }, [bid]);
-
-  useEffect(() => {
-    // Update view count only if it hasn't been updated yet
-    if (boardData && !viewCountUpdated) {
-      axios.get(`/board/view/${bid}`)
-        .then(response => {
-          setViewCountUpdated(true); // Mark view count as updated
-          setBoardData(prevData => ({
-            ...prevData,
-            viewCount: prevData.viewCount + 1 // Increment view count
-          }));
-        })
-        .catch(error => {
-          console.log('Error updating view count:', error);
-        });
-    }
-  }, [bid, boardData, viewCountUpdated]);
+  }, [bid]); // Only run once when the component mounts
 
   const handleBoardUpdate = async () => {
     try {
@@ -80,7 +64,7 @@ function View() {
             {boardData.content}
           </div>
           <div className="btn_area">
-            <button className="btn_blue" onClick={() => navigate('/list')}>목록</button>
+            <button className="btn_blue" onClick={() => { navigate('/list'); }}>목록</button>
             <button type="button" className="btn_blue" onClick={handleBoardUpdate}>수정</button>
             <button type="button" className="btn_blue">삭제</button>
           </div>

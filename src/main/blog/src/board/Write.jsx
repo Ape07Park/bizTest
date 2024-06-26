@@ -165,7 +165,7 @@ const Write = () => {
             </table>
             <div className="btn_area">
               <button type="submit" className="btn_blue">확인</button>
-              <a href="#" className="btn_blue_line">취소</a>
+              <a href="#" className="btn_blue_line" onClick={move}>취소</a>
             </div>
           </form>
         </div>

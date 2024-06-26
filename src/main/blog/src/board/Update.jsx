@@ -18,8 +18,14 @@ async function fetchBoard(bid) {
 
 async function uploadImage(file) {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  if (!file){
+
+    formData.append('file', []);
+  } else{
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  }
 
   console.log("file" + formData);
 
@@ -41,6 +47,9 @@ async function BoardUpdate(boardData, file) {
 
   if (file) {
     formData.append('file', file);
+  }
+  else{
+    formData.append('file', []);
   }
 
   try {
@@ -90,7 +99,13 @@ const Update = () => {
   
     try {
       let uploadedFile = file;
-  
+      
+      if(!uploadedFile){
+        uploadedFile = '';
+      } 
+
+      console.log('uploadedFile'+ uploadedFile);
+
       const boardData = {
         bid: bid,
         title: title,
@@ -99,7 +114,8 @@ const Update = () => {
         regTime: new Date().toISOString(), // Assuming regTime is a new Date
         viewCount: 0, // Set the viewCount to 0 or as required
       };
-  
+      
+      console.log(uploadedFile);
       await BoardUpdate(boardData, uploadedFile);
   
       console.log('Board updated');
@@ -197,7 +213,7 @@ const Update = () => {
             </table>
             <div className="btn_area">
               <button type="submit" className="btn_blue">확인</button>
-              <a href="#" className="btn_blue_line">취소</a>
+              <a href="#" className="btn_blue_line" onClick={move}>취소</a>
             </div>
           </form>
         </div>

@@ -66,8 +66,9 @@ public class BoardController {
 	
 	@GetMapping("/detail/{bid}")
 	public JSONObject getBoardDetail(@PathVariable int bid) {
-				Board board = boardService.getBoardByBid(bid);
 				boardService.increaseViewCount(bid);
+				Board board = boardService.getBoardByBid(bid);
+				
 				
 				JSONObject jObj = new JSONObject();
 				jObj.put("bid", board.getBid());
@@ -117,5 +118,7 @@ public class BoardController {
               
         return "Success";
     }
+	
+	
 }
 
